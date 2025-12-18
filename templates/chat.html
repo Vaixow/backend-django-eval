@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat en Vivo - TaskMaster{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="text-white mb-4">
+            <i class="bi bi-chat-dots"></i> Chat en Vivo con WebSockets
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-people"></i> Sala: General</h5>
+                <span class="badge bg-light text-dark" id="connectionStatus">
+                    <i class="bi bi-circle-fill text-danger"></i> Desconectado
+                </span>
+            </div>
+            <div class="card-body">
+                <div id="chatMessages" class="mb-3 p-3 bg-light rounded" style="height: 400px; overflow-y: auto;">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        Bienvenido al chat en tiempo real. Los mensajes se sincronizan instantáneamente con todos los usuarios conectados.
+                    </div>
+                </div>
+                
+                <form id="chatForm">
+                    <div class="input-group mb-3">
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="usernameInput" 
+                            placeholder="Tu nombre" 
+                            required
+                        >
+                    </div>
+                    <div class="input-group">
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="messageInput" 
+                            placeholder="Escribe un mensaje..." 
+                            required
+                        >
+                        <button type="submit" class="btn btn-primary" id="sendButton" disabled>
+                            <i class="bi bi-send"></i> Enviar
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-3">
+                    <button class="btn btn-sm btn-success" id="connectButton">
+                        <i class="bi bi-plug"></i> Conectar
+                    </button>
+                    <button class="btn btn-sm btn-danger" id="disconnectButton" disabled>
+                        <i class="bi bi-x-circle"></i> Desconectar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Card -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5><i class="bi bi-info-circle-fill text-primary"></i> Sobre esta función</h5>
+                <p class="mb-2">
+                    Este chat utiliza <strong>Django Channels</strong> y <strong>WebSockets</strong> 
+                    para proporcionar comunicación en tiempo real.
+                </p>
+                <ul class="mb-0">
+                    <li>Mensajes instantáneos sin recargar la página</li>
+                    <li>Sincronización automática entre todos los usuarios</li>
+                    <li>Notificaciones de conexión/desconexión</li>
+                    <li>Arquitectura escalable con Channels Layer</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let chatSocket = null;
+    let isConnected = false;
+
+    const chatMessages = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const usernameInput = document.getElementById('usernameInput');
+    const sendButton = document.getElementById('sendButton');
+    const connectButton = document.getElementById('connectButton');
+    const disconnectButton = document.getElementById('disconnectButton');
+    const connectionStatus = document.getElementById('connectionStatus');
+
+    // Get username from localStorage or use default
+    const savedUsername = localStorage.getItem('chat_username');
+    if (savedUsername) {
+        usernameInput.value = savedUsername;
+    }
+
+    function connect() {
+        const username = usernameInput.value.trim();
+        if (!username) {
+            alert('Por favor, ingresa tu nombre.');
+            return;
+        }
+
+        localStorage.setItem('chat_username', username);
+
+        // Determine WebSocket protocol
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/chat/general/`;
+
+        try {
+            chatSocket = new WebSocket(wsUrl);
+
+            chatSocket.onopen = function(e) {
+                console.log('WebSocket connected');
+                isConnected = true;
+                updateConnectionStatus(true);
+                addSystemMessage('Conectado al chat en tiempo real');
+                sendButton.disabled = false;
+                connectButton.disabled = true;
+                disconnectButton.disabled = false;
+                usernameInput.disabled = true;
+            };
+
+            chatSocket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                console.log('Message received:', data);
+
+                if (data.type === 'system') {
+                    addSystemMessage(data.message);
+                } else if (data.type === 'message') {
+                    addMessage(data.username, data.message, data.timestamp);
+                }
+            };
+
+            chatSocket.onerror = function(e) {
+                console.error('WebSocket error:', e);
+                addSystemMessage('Error de conexión. Intenta de nuevo.', true);
+            };
+
+            chatSocket.onclose = function(e) {
+                console.log('WebSocket closed');
+                isConnected = false;
+                updateConnectionStatus(false);
+                addSystemMessage('Desconectado del chat');
+                sendButton.disabled = true;
+                connectButton.disabled = false;
+                disconnectButton.disabled = true;
+                usernameInput.disabled = false;
+                chatSocket = null;
+            };
+        } catch (error) {
+            console.error('Error creating WebSocket:', error);
+            addSystemMessage('No se pudo establecer la conexión WebSocket. El servidor debe estar ejecutándose con Daphne o soporte para WebSockets.', true);
+        }
+    }
+
+    function disconnect() {
+        if (chatSocket) {
+            chatSocket.close();
+        }
+    }
+
+    function sendMessage(e) {
+        e.preventDefault();
+        
+        if (!isConnected) {
+            alert('No estás conectado al chat. Por favor, conéctate primero.');
+            return;
+        }
+
+        const message = messageInput.value.trim();
+        const username = usernameInput.value.trim();
+
+        if (message && chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({
+                'message': message,
+                'username': username
+            }));
+            messageInput.value = '';
+        }
+    }
+
+    function addMessage(username, message, timestamp) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'mb-2 p-2 bg-white rounded';
+        
+        const time = new Date(timestamp).toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        messageDiv.innerHTML = `
+            <div class="d-flex justify-content-between">
+                <strong class="text-primary">${escapeHtml(username)}</strong>
+                <small class="text-muted">${time}</small>
+            </div>
+            <div>${escapeHtml(message)}</div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addSystemMessage(message, isError = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `alert ${isError ? 'alert-danger' : 'alert-info'} alert-sm mb-2`;
+        messageDiv.innerHTML = `
+            <i class="bi bi-${isError ? 'exclamation-triangle' : 'info-circle'}"></i> ${escapeHtml(message)}
+        `;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function updateConnectionStatus(connected) {
+        if (connected) {
+            connectionStatus.innerHTML = '<i class="bi bi-circle-fill text-success"></i> Conectado';
+        } else {
+            connectionStatus.innerHTML = '<i class="bi bi-circle-fill text-danger"></i> Desconectado';
+        }
+    }
+
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // Event listeners
+    document.getElementById('chatForm').addEventListener('submit', sendMessage);
+    connectButton.addEventListener('click', connect);
+    disconnectButton.addEventListener('click', disconnect);
+
+    // Enable Enter to send message
+    messageInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendMessage(e);
+        }
+    });
+</script>
+{% endblock %}

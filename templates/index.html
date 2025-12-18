@@ -1,0 +1,315 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 text-center text-white">
+        <h1 class="display-4 fw-bold mb-3">
+            <i class="bi bi-rocket-takeoff"></i> TaskMaster
+        </h1>
+        <p class="lead">Gestión Inteligente de Tareas con IA y Comunicación en Tiempo Real</p>
+    </div>
+</div>
+
+<!-- Hero Section -->
+<div class="row mb-4">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-body p-5 text-center">
+                <h2 class="mb-4">Bienvenido a TaskMaster</h2>
+                <p class="lead mb-4">
+                    La solución completa para gestionar tus tareas con inteligencia artificial,
+                    análisis de productividad y colaboración en tiempo real.
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#registerModal">
+                        <i class="bi bi-person-plus"></i> Comenzar Gratis
+                    </button>
+                    <a href="/dashboard/" class="btn btn-outline-primary btn-lg">
+                        <i class="bi bi-graph-up"></i> Ver Demo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center p-4">
+                <div class="mb-3">
+                    <i class="bi bi-robot" style="font-size: 3rem; color: var(--primary-color);"></i>
+                </div>
+                <h4>Asistente IA</h4>
+                <p class="text-muted">
+                    Integración con OpenAI ChatGPT para ayudarte a organizar y priorizar tus tareas
+                    de manera inteligente.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center p-4">
+                <div class="mb-3">
+                    <i class="bi bi-bar-chart-line" style="font-size: 3rem; color: var(--success-color);"></i>
+                </div>
+                <h4>Dashboard Analítico</h4>
+                <p class="text-muted">
+                    Visualiza tu productividad con gráficos interactivos usando Chart.js.
+                    Datos en tiempo real de tu progreso.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center p-4">
+                <div class="mb-3">
+                    <i class="bi bi-chat-dots" style="font-size: 3rem; color: var(--warning-color);"></i>
+                </div>
+                <h4>Chat en Vivo</h4>
+                <p class="text-muted">
+                    Comunícate en tiempo real con tu equipo usando WebSockets.
+                    Colaboración instantánea.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- API Features -->
+<div class="row mb-4">
+    <div class="col-lg-10 mx-auto">
+        <div class="card">
+            <div class="card-body p-5">
+                <h3 class="mb-4 text-center">API REST Completa</h3>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h5><i class="bi bi-check-circle-fill text-success"></i> CRUD de Tareas</h5>
+                        <p class="text-muted">Crear, leer, actualizar y eliminar tareas con API RESTful completa.</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h5><i class="bi bi-shield-check text-success"></i> Autenticación JWT</h5>
+                        <p class="text-muted">Sistema de autenticación seguro con JSON Web Tokens.</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h5><i class="bi bi-gear-fill text-success"></i> Variables de Entorno</h5>
+                        <p class="text-muted">Configuración segura con credenciales en variables de entorno.</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h5><i class="bi bi-globe text-success"></i> CORS Configurado</h5>
+                        <p class="text-muted">Políticas de CORS configuradas de manera segura.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chatbot Demo -->
+<div class="row mb-4" id="taskSection" style="display: none;">
+    <div class="col-lg-10 mx-auto">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-list-task"></i> Gestión de Tareas</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Crear Nueva Tarea</h5>
+                        <form id="createTaskForm">
+                            <div class="mb-3">
+                                <input type="text" class="form-control" id="taskTitle" placeholder="Título" required>
+                            </div>
+                            <div class="mb-3">
+                                <textarea class="form-control" id="taskDescription" rows="3" placeholder="Descripción" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <select class="form-select" id="taskPriority">
+                                    <option value="low">Prioridad Baja</option>
+                                    <option value="medium" selected>Prioridad Media</option>
+                                    <option value="high">Prioridad Alta</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Crear Tarea
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Mis Tareas</h5>
+                        <div id="taskList" class="overflow-auto" style="max-height: 400px;">
+                            <p class="text-muted">Cargando tareas...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chatbot Section -->
+<div class="row mb-4" id="chatbotSection" style="display: none;">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-robot"></i> Asistente IA - ChatGPT</h4>
+            </div>
+            <div class="card-body">
+                <div id="chatMessages" class="mb-3 p-3 bg-light rounded" style="height: 300px; overflow-y: auto;">
+                    <p class="text-muted">Escribe un mensaje para interactuar con el asistente de IA...</p>
+                </div>
+                <form id="chatForm">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="chatInput" placeholder="Escribe tu mensaje..." required>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send"></i> Enviar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Show sections only when logged in
+    if (accessToken) {
+        document.getElementById('taskSection').style.display = 'block';
+        document.getElementById('chatbotSection').style.display = 'block';
+        loadTasks();
+    }
+
+    // Load tasks
+    async function loadTasks() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/tasks/my_tasks/`, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+
+            if (response.ok) {
+                const tasks = await response.json();
+                displayTasks(tasks);
+            }
+        } catch (error) {
+            console.error('Error loading tasks:', error);
+        }
+    }
+
+    // Display tasks
+    function displayTasks(tasks) {
+        const taskList = document.getElementById('taskList');
+        if (tasks.length === 0) {
+            taskList.innerHTML = '<p class="text-muted">No tienes tareas aún.</p>';
+            return;
+        }
+
+        let html = '<div class="list-group">';
+        tasks.forEach(task => {
+            const priorityColors = {
+                'low': 'success',
+                'medium': 'warning',
+                'high': 'danger'
+            };
+            html += `
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">${task.title}</h6>
+                            <p class="mb-1 text-muted small">${task.description}</p>
+                            <span class="badge bg-${priorityColors[task.priority]}">${task.priority}</span>
+                            <span class="badge bg-secondary">${task.status}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        taskList.innerHTML = html;
+    }
+
+    // Create task
+    document.getElementById('createTaskForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const taskData = {
+            title: document.getElementById('taskTitle').value,
+            description: document.getElementById('taskDescription').value,
+            priority: document.getElementById('taskPriority').value,
+            status: 'pending'
+        };
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/tasks/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify(taskData)
+            });
+
+            if (response.ok) {
+                alert('¡Tarea creada exitosamente!');
+                document.getElementById('createTaskForm').reset();
+                loadTasks();
+            } else {
+                alert('Error al crear la tarea.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al conectar con el servidor.');
+        }
+    });
+
+    // Chatbot
+    document.getElementById('chatForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const message = document.getElementById('chatInput').value;
+        const chatMessages = document.getElementById('chatMessages');
+        
+        // Add user message
+        chatMessages.innerHTML += `
+            <div class="mb-2">
+                <strong>Tú:</strong> ${message}
+            </div>
+        `;
+        
+        document.getElementById('chatInput').value = '';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/chatbot/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({ message })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                chatMessages.innerHTML += `
+                    <div class="mb-2">
+                        <strong class="text-primary">Asistente IA:</strong> ${data.response}
+                    </div>
+                `;
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            } else {
+                alert('Error al comunicarse con el chatbot.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al conectar con el servidor.');
+        }
+    });
+</script>
+{% endblock %}
